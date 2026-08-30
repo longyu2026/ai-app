@@ -3026,7 +3026,7 @@ function lrParsePastedText(){
     var status=$('lrOcrStatus');
     if(status){status.style.display='block';status.style.background='#E3F2FD';status.style.color='#1976D2';status.innerHTML='<span class="spin"></span>正在解析粘贴文本…';}
     /* v32: 文本归一化（与OCR归一共用逻辑，修正常见粘贴格式问题） */
-    var normText = v32NormalizeText(text);
+    var normText = (typeof v32NormalizeText === 'function') ? v32NormalizeText(text) : text;
     var metrics=lrExtractMetrics(normText);
     var matchedCount=Object.keys(metrics).filter(function(k){return metrics[k]&&!k.endsWith('_conflict')}).length;
     if(matchedCount>=3){
