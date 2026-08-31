@@ -1293,29 +1293,18 @@ html[data-theme=dark] .lr-login-card input{
 
 </style>
 <style id="v27-nav">
-/* ===== v27: 直播复盘步骤导航收纳为单按钮（下拉展开） ===== */
-#v13LiveNav{width:fit-content;max-width:100%}
-#v13LiveNav .v13-secnav-inner{flex-wrap:nowrap}
-/* 收起态：隐藏全部链接，只留按钮 */
-#v13LiveNav:not(.v27-open) .v13-secnav-inner > a,
-#v13LiveNav:not(.v27-open) .v13-secnav-report,
-#v13LiveNav .v13-secnav-label{display:none!important}
+/* ===== v27: 直播复盘步骤导航（默认展开，滚动时固定指引） ===== */
+#v13LiveNav{width:100%;max-width:100%}
+#v13LiveNav .v13-secnav-inner{flex-wrap:wrap;gap:4px}
+/* 默认显示所有导航链接 */
+#v13LiveNav .v13-secnav-inner > a{display:inline-block;padding:4px 10px}
+#v13LiveNav .v13-secnav-report{display:inline-flex;gap:2px;padding-left:8px;margin-left:4px;border-left:1px solid #E8ECF3;flex-wrap:wrap}
+#v13LiveNav .v13-secnav-label{display:inline-block}
 /* 收纳按钮（雾蓝品牌渐变，日/夜双模） */
-.v27-nav-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:#fff;background:linear-gradient(135deg,#5B8DEF,#7FA8F2);border:none;border-radius:9px;padding:7px 13px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(91,141,239,.35);transition:all .15s;font-family:inherit;line-height:1.2}
-.v27-nav-btn:hover{filter:brightness(1.07);box-shadow:0 4px 14px rgba(91,141,239,.45)}
-.v27-nav-btn .v27-nav-cur{font-weight:600;opacity:.95;max-width:9em;overflow:hidden;text-overflow:ellipsis}
-.v27-nav-btn .v27-caret{transition:transform .2s;font-size:10px;opacity:.9}
-#v13LiveNav.v27-open .v27-nav-btn .v27-caret{transform:rotate(180deg)}
-/* 展开态：竖排下拉菜单 */
-#v13LiveNav.v27-open .v13-secnav-inner{flex-direction:column;align-items:stretch;min-width:216px;box-shadow:0 14px 36px rgba(16,24,40,.16);flex-wrap:wrap}
-#v13LiveNav.v27-open .v13-secnav-label{border-bottom:1px solid #E8ECF3;padding:2px 2px 7px;margin:0 0 4px}
-#v13LiveNav.v27-open .v13-secnav-inner > a{display:block;padding:7px 10px}
-#v13LiveNav.v27-open .v13-secnav-report{border-left:none;border-top:1px dashed #E8ECF3;padding:6px 0 0;margin:4px 0 0;flex-wrap:wrap}
+.v27-nav-btn{display:none}
 /* 暗色主题适配 */
-html[data-theme=dark] .v27-nav-btn{background:linear-gradient(135deg,#4D9FFF,#2E6FD8);box-shadow:0 2px 10px rgba(77,159,255,.35)}
-html[data-theme=dark] #v13LiveNav.v27-open .v13-secnav-inner{background:rgba(10,26,50,.96)!important;border-color:rgba(255,255,255,.08)}
-html[data-theme=dark] #v13LiveNav.v27-open .v13-secnav-label{border-color:rgba(255,255,255,.12)}
-html[data-theme=dark] #v13LiveNav.v27-open .v13-secnav-report{border-color:rgba(255,255,255,.12)}
+html[data-theme=dark] #v13LiveNav .v13-secnav-inner{background:rgba(10,26,50,.88)!important;border-color:rgba(255,255,255,.06)}
+html[data-theme=dark] #v13LiveNav .v13-secnav-report{border-color:rgba(255,255,255,.12)}
 
 </style>
 </head>
@@ -1428,11 +1417,17 @@ html[data-theme=dark] #v13LiveNav.v27-open .v13-secnav-report{border-color:rgba(
     <a href="#v13LrCard4" data-spy="v13LrCard4">④ 素材数据</a>
     <a href="#lrReportArea" data-spy="lrReportArea" id="v13ReportLink" style="display:none">⑤ 复盘报告</a>
     <span class="v13-secnav-report" id="v13ReportSubNav" style="display:none">
-      <a href="#lrSecMetrics" data-spy="lrSecMetrics">指标</a>
+      <a href="#lrSecHealth" data-spy="lrSecHealth">健康度</a>
+      <a href="#lrSecMetrics" data-spy="lrSecMetrics">核心指标</a>
+      <a href="#lrSecFullData" data-spy="lrSecFullData">完整数据</a>
+      <a href="#lrSecFunnelRates" data-spy="lrSecFunnelRates">五维四率</a>
+      <a href="#lrSecAutoDiag" data-spy="lrSecAutoDiag">自动诊断</a>
       <a href="#lrSecSummary" data-spy="lrSecSummary">总结</a>
       <a href="#lrSecStage" data-spy="lrSecStage">人货场</a>
+      <a href="#lrSecTimeSegment" data-spy="lrSecTimeSegment">各时段</a>
       <a href="#lrSecRedline" data-spy="lrSecRedline">红线</a>
-      <a href="#lrSecMaterial" data-spy="lrSecMaterial">素材</a><a href="#v17GraiSec" data-spy="v17GraiSec">GRAI</a>
+      <a href="#lrSecMaterial" data-spy="lrSecMaterial">素材</a>
+      <a href="#v17GraiSec" data-spy="v17GraiSec">GRAI</a>
     </span>
   </div>
 </div>
