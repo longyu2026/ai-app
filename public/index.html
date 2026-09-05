@@ -2627,7 +2627,9 @@ function rvProcessAll(){
   if(dayCount===1){rvShowStatus('当前仅1天数据（'+RV_DASHBOARD[0].date+'），环比需至少2天数据。'+cleanNote,true)}else{rvShowStatus('已加载 '+dayCount+' 天数据（'+RV_DASHBOARD[0].date+' ~ '+RV_DASHBOARD[RV_DASHBOARD.length-1].date+'）。'+cleanNote,false)}
   ['rvEmpty','rvSecMetrics','rvSecGmv','rvSecTraffic','rvSecFunnel','rvSecAd','rvSecRefund','rvSecCarrier','rvSecProduct','rvSecConclusion'].forEach(function(id){$(id).classList.add('hidden')});
   $('rvEmpty').classList.add('hidden');
-  rvRenderMetrics();rvRenderGmv();rvRenderTraffic();rvRenderFunnel();rvRenderAd();rvRenderRefund();rvRenderCarrier();rvRenderProduct();rvRenderConclusion(cleanLog)
+  var rvSections=['rvSecMetrics','rvSecGmv','rvSecTraffic','rvSecFunnel','rvSecAd','rvSecRefund','rvSecCarrier','rvSecProduct','rvSecConclusion'];
+  var rvRenderFns=[function(){rvRenderMetrics()},function(){rvRenderGmv()},function(){rvRenderTraffic()},function(){rvRenderFunnel()},function(){rvRenderAd()},function(){rvRenderRefund()},function(){rvRenderCarrier()},function(){rvRenderProduct()},function(){rvRenderConclusion(cleanLog)}];
+  for(var ri=0;ri<rvSections.length;ri++){try{rvRenderFns[ri]();$(rvSections[ri]).classList.remove('hidden')}catch(e){console.warn('渲染 '+rvSections[ri]+' 失败:',e);$(rvSections[ri]).classList.remove('hidden')}}
 }
 function rvRenderMetrics(){
   var latest=RV_DASHBOARD[RV_DASHBOARD.length-1],html='';
@@ -4593,18 +4595,21 @@ var MA_DATA=[];var MA_CHARTS={};
 function maHandleFile(event){
   var file=event.target.files[0];if(!file)return;
   var status=$('maStatus');status.style.display='block';status.style.background='#E3F2FD';status.style.color='#1976D2';status.innerHTML='<span class="spin"></span>正在解析文件...';
+  var isCsv=file.name&&file.name.toLowerCase().endsWith('.csv');
   var reader=new FileReader();reader.onload=function(e){
-    try{var wb=XLSX.read(e.target.result,{type:'array'});var found=false;
+    try{var wb=XLSX.read(e.target.result,{type:'array'});var found=false;var matchLog=[];
       wb.SheetNames.forEach(function(sn){
         if(found)return;var rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1,defval:''});
         if(rows.length<2)return;var headers=rows[0].map(function(h){return String(h).trim()});
         var hasMatId=headers.some(function(h){return h.indexOf('素材ID')>=0||h.indexOf('素材id')>=0||h.indexOf('素材名称')>=0||h.indexOf('素材标题')>=0});
-        var hasCost=headers.some(function(h){return h.indexOf('整体消耗')>=0||h.indexOf('消耗')>=0});
-        var hasRoi=headers.some(function(h){return h.indexOf('ROI')>=0||h.indexOf('roi')>=0});
+        var hasCost=headers.some(function(h){return h.indexOf('整体消耗')>=0||h.indexOf('消耗')>=0||h.indexOf('花费')>=0||h.indexOf('广告消耗')>=0});
+        var hasRoi=headers.some(function(h){return h.indexOf('ROI')>=0||h.indexOf('roi')>=0||h.indexOf('投入产出比')>=0});
+        matchLog.push('Sheet「'+sn+'」: 素材ID='+(hasMatId?'✓':'✗')+' 消耗='+(hasCost?'✓':'✗')+' ROI='+(hasRoi?'✓':'✗'));
         if((hasMatId?1:0)+(hasCost?1:0)+(hasRoi?1:0)>=2){found=true;maParseData(rows,headers,sn)}
       });
-      if(!found){status.style.background='#FFEBEE';status.style.color='#FF4242';status.innerHTML='未识别到素材数据表（需包含素材ID、整体消耗、整体支付ROI中至少2项）'}
-    }catch(err){status.style.background='#FFEBEE';status.style.color='#FF4242';status.innerHTML='解析失败: '+err.message}
+      if(!found){var csvHint=isCsv?'<br/><span style="color:#1565C0">💡 CSV格式建议：请将文件另存为 .xlsx 格式后重新上传，可获得更稳定的解析效果</span>':'';
+        status.style.background='#FFEBEE';status.style.color='#FF4242';status.innerHTML='未识别到素材数据表（需包含素材ID、整体消耗、整体支付ROI中至少2项）'+csvHint+'<br/><span style="font-size:11px;color:var(--gray-500)">列名匹配详情：'+matchLog.join('；')+'</span>'}
+    }catch(err){status.style.background='#FFEBEE';status.style.color='#FF4242';status.innerHTML='解析失败: '+err.message+(isCsv?'<br/><span style="color:#1565C0">💡 CSV格式可能存在兼容性问题，建议另存为 .xlsx 后重试</span>':'')}
   };reader.readAsArrayBuffer(file)
 }
 function maParseData(rows,headers,sheetName){
@@ -8022,6 +8027,30 @@ window.lrGenerateReport = function(){
 
     prompt += '\n要求：\n1. 先给整体健康评级（优/良/预警/差）\n2. 指出最薄弱的 1-2 个环节及原因\n3. 给出 3 条可立即执行的具体动作\n4. 所有结论必须基于数据，禁止编造';
 
+    /* 降级策略：15秒超时后自动回退到Rule层建议 */
+    var cozeTimedOut=false;
+    var cozeTimer=setTimeout(function(){
+      cozeTimedOut=true;
+      cozeShowResult('AI诊断超时，已自动切换到规则引擎快速诊断', 'warn');
+      if(typeof lrBuildAutoDiag==='function'){
+        var diag=lrBuildAutoDiag(lrUnifiedMetrics?lrUnifiedMetrics():{},dapan);
+        if(diag){
+          var el=$('lrOverallAnalysis');
+          if(el){el.value=(el.value.trim()?el.value.trim()+'\n\n':'')+'[规则引擎快速诊断]\n综合定级：'+diag.grade+'级\n'+diag.gradeLabel+(diag.issues&&diag.issues.length?'薄弱环节：'+diag.issues.join('、'):'')+(diag.summary?'\n'+diag.summary:'');if(typeof lrSaveState==='function')lrSaveState()}
+        }
+      }
+    },15000);
+
+    var origCozeSend=window.cozeSend;
+    window.cozeSend=function(p){
+      origCozeSend(p);
+      /* 监听成功后清除超时定时器 */
+      var pollClear=setInterval(function(){
+        var arr=cozeMsgs();var last=arr.length>0?arr[arr.length-1]:null;
+        if(last&&last.role==='bot'){clearTimeout(cozeTimer);clearInterval(pollClear)}
+      },500);
+      setTimeout(function(){clearInterval(pollClear)},30000);
+    };
     window.cozeSend(prompt);
   };
 
