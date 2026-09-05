@@ -1,0 +1,581 @@
+/* ============================================================
+   精密指挥台 · Precision Command Center Design System (Safe)
+   覆盖层：零功能改动，纯视觉升级
+   —— 深空背景 · 霓虹数据 · 玻璃面板 · 扫描线动效
+   安全版：零DOM操作，CSS通过index.html的<link>引入
+   ============================================================ */
+
+/* ---------- 0. 设计令牌 ---------- */
+html[data-theme="dark"] {
+  --cc-bg-deep: #060a13;
+  --cc-bg-base: #0a0f1a;
+  --cc-bg-surface: #0f1525;
+  --cc-bg-elevated: #141c30;
+  --cc-bg-hover: #1a2440;
+  --cc-border: rgba(0, 212, 255, 0.08);
+  --cc-border-active: rgba(0, 212, 255, 0.25);
+  --cc-glow-cyan: rgba(0, 212, 255, 0.15);
+  --cc-glow-blue: rgba(56, 139, 253, 0.12);
+  --cc-glow-purple: rgba(139, 92, 246, 0.10);
+  --cc-cyan: #00d4ff;
+  --cc-cyan-dim: #0ea5e9;
+  --cc-blue: #388bfd;
+  --cc-green: #10b981;
+  --cc-green-dim: #059669;
+  --cc-red: #ef4444;
+  --cc-orange: #f59e0b;
+  --cc-purple: #8b5cf6;
+  --cc-text: #e2e8f0;
+  --cc-text-dim: #94a3b8;
+  --cc-text-muted: #64748b;
+  --cc-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  --cc-radius: 12px;
+  --cc-scanline: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 212, 255, 0.015) 2px,
+    rgba(0, 212, 255, 0.015) 4px
+  );
+}
+
+/* ---------- 1. 全局深空背景 ---------- */
+html[data-theme="dark"] body {
+  background: var(--cc-bg-deep) !important;
+  background-image: none !important;
+}
+
+html[data-theme="dark"] body::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    var(--cc-scanline),
+    radial-gradient(ellipse 900px 500px at 15% 5%, rgba(0, 212, 255, 0.06), transparent 60%),
+    radial-gradient(ellipse 800px 450px at 85% 80%, rgba(139, 92, 246, 0.05), transparent 55%),
+    radial-gradient(ellipse 600px 350px at 50% 50%, rgba(56, 139, 253, 0.03), transparent 50%) !important;
+  animation: ccAurora 30s ease-in-out infinite alternate !important;
+}
+
+@keyframes ccAurora {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { opacity: 0.85; }
+}
+
+@media (min-width: 769px) {
+  html[data-theme="dark"] body::after {
+    content: '' !important;
+    position: fixed !important;
+    inset: 0 !important;
+    pointer-events: none !important;
+    z-index: -1 !important;
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px) !important;
+    background-size: 60px 60px !important;
+  }
+}
+
+/* ---------- 2. 顶栏：战术指挥条 ---------- */
+html[data-theme="dark"] .top-bar {
+  background: rgba(10, 15, 26, 0.88) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.8) !important;
+  backdrop-filter: blur(20px) saturate(1.8) !important;
+  border-bottom: 1px solid var(--cc-border-active) !important;
+  box-shadow:
+    0 1px 0 rgba(0, 212, 255, 0.06),
+    0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+html[data-theme="dark"] .top-bar::after {
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(0, 212, 255, 0.5) 15%,
+    rgba(56, 139, 253, 0.4) 40%,
+    rgba(139, 92, 246, 0.35) 70%,
+    transparent
+  ) !important;
+}
+
+html[data-theme="dark"] .logo svg {
+  filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5)) !important;
+}
+
+html[data-theme="dark"] .logo > span:first-of-type {
+  background: linear-gradient(120deg, #00d4ff, #388bfd, #8b5cf6) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* ---------- 3. 卡片：玻璃面板 ---------- */
+html[data-theme="dark"] .panel-section,
+html[data-theme="dark"] .section,
+html[data-theme="dark"] .lr-section,
+html[data-theme="dark"] .overview-card,
+html[data-theme="dark"] .lr-card,
+html[data-theme="dark"] .ma-stat-card,
+html[data-theme="dark"] .lr-time-card,
+html[data-theme="dark"] .lr-redline-dim,
+html[data-theme="dark"] .lr-input-card,
+html[data-theme="dark"] .lr-script-card,
+html[data-theme="dark"] .lr-dim-card,
+html[data-theme="dark"] .ma-top3-card {
+  background: rgba(15, 21, 37, 0.85) !important;
+  border: 1px solid var(--cc-border) !important;
+  border-image: none !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  backdrop-filter: blur(8px) !important;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
+}
+
+html[data-theme="dark"] .panel-section:hover,
+html[data-theme="dark"] .section:hover,
+html[data-theme="dark"] .lr-section:hover {
+  border-color: var(--cc-border-active) !important;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 0 20px var(--cc-glow-cyan),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+html[data-theme="dark"] .overview-card:hover,
+html[data-theme="dark"] .lr-card:hover,
+html[data-theme="dark"] .ma-stat-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--cc-border-active) !important;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 16px var(--cc-glow-cyan) !important;
+}
+
+html[data-theme="dark"] .overview-card .accent-bar,
+html[data-theme="dark"] .lr-card .lr-accent {
+  box-shadow: 0 0 8px currentColor !important;
+}
+
+/* ---------- 4. 区块标题 ---------- */
+html[data-theme="dark"] .panel-section h3::after {
+  background: linear-gradient(90deg, var(--cc-cyan), var(--cc-blue) 60%, transparent) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3) !important;
+  height: 2px !important;
+}
+
+html[data-theme="dark"] .panel-section h3 .left svg {
+  color: var(--cc-cyan) !important;
+  background: rgba(0, 212, 255, 0.1) !important;
+}
+
+html[data-theme="dark"] .section-header h2 .num,
+html[data-theme="dark"] .lr-section-header h2 .num {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.35) !important;
+}
+
+/* ---------- 5. 导航页签 ---------- */
+html[data-theme="dark"] .mode-tab.active {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow:
+    0 0 16px rgba(0, 212, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+html[data-theme="dark"] .tab-btn.active {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow:
+    0 0 12px rgba(0, 212, 255, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="dark"] .mode-tabs {
+  background: rgba(15, 21, 37, 0.6) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .tab-nav {
+  background: rgba(15, 21, 37, 0.85) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+/* ---------- 6. 按钮 ---------- */
+html[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow:
+    0 0 12px rgba(0, 212, 255, 0.25),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="dark"] .btn-primary:hover {
+  filter: brightness(1.15) !important;
+  box-shadow:
+    0 0 20px rgba(0, 212, 255, 0.35),
+    0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+html[data-theme="dark"] .btn-ghost {
+  background: rgba(0, 212, 255, 0.05) !important;
+  border: 1px solid var(--cc-border) !important;
+  color: var(--cc-text-dim) !important;
+}
+
+html[data-theme="dark"] .btn-ghost:hover {
+  background: rgba(0, 212, 255, 0.1) !important;
+  border-color: var(--cc-border-active) !important;
+  color: var(--cc-cyan) !important;
+}
+
+/* ---------- 7. 表格 ---------- */
+html[data-theme="dark"] .data-table th {
+  background: linear-gradient(180deg, rgba(0, 212, 255, 0.08), rgba(0, 212, 255, 0.02)) !important;
+  color: var(--cc-cyan) !important;
+  border-bottom: 1px solid var(--cc-border-active) !important;
+  font-family: var(--cc-mono) !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+}
+
+html[data-theme="dark"] .data-table td {
+  border-bottom: 1px solid rgba(0, 212, 255, 0.04) !important;
+  color: var(--cc-text) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+html[data-theme="dark"] .data-table tbody tr:nth-child(even) td {
+  background: rgba(0, 212, 255, 0.015) !important;
+}
+
+html[data-theme="dark"] .data-table tbody tr:hover td {
+  background: rgba(0, 212, 255, 0.06) !important;
+}
+
+/* ---------- 8. 数值显示 ---------- */
+html[data-theme="dark"] .overview-card .value,
+html[data-theme="dark"] .lr-card .lr-value,
+html[data-theme="dark"] .ma-stat-card .stat-value,
+html[data-theme="dark"] .metric-card .value {
+  font-family: var(--cc-mono) !important;
+  color: var(--cc-cyan) !important;
+  text-shadow: 0 0 12px rgba(0, 212, 255, 0.2) !important;
+}
+
+html[data-theme="dark"] .overview-card .label,
+html[data-theme="dark"] .lr-card .lr-label,
+html[data-theme="dark"] .ma-stat-card .stat-label,
+html[data-theme="dark"] .metric-card .label {
+  color: var(--cc-text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  font-size: 10px !important;
+}
+
+/* ---------- 9. 输入控件 ---------- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background: var(--cc-bg-deep) !important;
+  color: var(--cc-text) !important;
+  border: 1px solid var(--cc-border) !important;
+  font-family: var(--cc-mono) !important;
+}
+
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] select:focus {
+  border-color: var(--cc-cyan) !important;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 0 12px rgba(0, 212, 255, 0.1) !important;
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--cc-text-muted) !important;
+}
+
+/* ---------- 10. 状态标签 ---------- */
+html[data-theme="dark"] .tag-red,
+html[data-theme="dark"] .rd-danger {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+
+html[data-theme="dark"] .tag-green,
+html[data-theme="dark"] .rd-ok {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+html[data-theme="dark"] .tag-orange,
+html[data-theme="dark"] .rd-warn {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.2) !important;
+}
+
+html[data-theme="dark"] .tag-blue {
+  background: rgba(56, 139, 253, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(56, 139, 253, 0.2) !important;
+}
+
+/* ---------- 11. 今日速览 ---------- */
+html[data-theme="dark"] .today-section {
+  background: linear-gradient(120deg,
+    rgba(0, 212, 255, 0.06),
+    rgba(139, 92, 246, 0.05) 55%,
+    rgba(56, 139, 253, 0.04)
+  ) !important;
+  border: 1px solid var(--cc-border-active) !important;
+}
+
+html[data-theme="dark"] .today-item {
+  background: rgba(15, 21, 37, 0.9) !important;
+  border-left: 3px solid var(--cc-cyan) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.05) !important;
+}
+
+html[data-theme="dark"] .today-item.warning { border-left-color: var(--cc-orange) !important; }
+html[data-theme="dark"] .today-item.info { border-left-color: var(--cc-blue) !important; }
+
+/* ---------- 12. 流程步骤 ---------- */
+html[data-theme="dark"] .v13-flow {
+  background: linear-gradient(120deg,
+    rgba(0, 212, 255, 0.04),
+    rgba(139, 92, 246, 0.04) 50%,
+    rgba(56, 139, 253, 0.03)
+  ) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .v13-step {
+  background: rgba(15, 21, 37, 0.9) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .v13-step:hover {
+  border-color: var(--cc-border-active) !important;
+  box-shadow: 0 0 16px var(--cc-glow-cyan) !important;
+}
+
+html[data-theme="dark"] .v13-step-num {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* ---------- 13. 章节导航 ---------- */
+html[data-theme="dark"] .v13-secnav {
+  background: rgba(10, 15, 26, 0.9) !important;
+  border: 1px solid var(--cc-border) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+html[data-theme="dark"] .v13-secnav a { color: var(--cc-text-muted) !important; }
+html[data-theme="dark"] .v13-secnav a:hover { background: rgba(0, 212, 255, 0.08) !important; color: var(--cc-cyan) !important; }
+
+html[data-theme="dark"] .v13-secnav a.v13-active {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.25) !important;
+}
+
+/* ---------- 14-15. 底栏 ---------- */
+html[data-theme="dark"] .bottom-nav {
+  background: rgba(10, 15, 26, 0.92) !important;
+  border-top: 1px solid var(--cc-border) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+html[data-theme="dark"] .bottom-nav .nav-item.active { color: var(--cc-cyan) !important; }
+html[data-theme="dark"] .bottom-nav .nav-item.active::after {
+  background: linear-gradient(90deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.4) !important;
+}
+
+html[data-theme="dark"] .lr-bottom-bar {
+  background: rgba(10, 15, 26, 0.92) !important;
+  border-top: 1px solid var(--cc-border-active) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  backdrop-filter: blur(16px) !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ---------- 16-17. 弹窗/Toast ---------- */
+html[data-theme="dark"] .modal {
+  background: var(--cc-bg-surface) !important;
+  border: 1px solid var(--cc-border-active) !important;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 30px var(--cc-glow-cyan) !important;
+}
+
+html[data-theme="dark"] .modal-header { border-bottom: 1px solid var(--cc-border) !important; }
+html[data-theme="dark"] .modal-footer { border-top: 1px solid var(--cc-border) !important; }
+
+html[data-theme="dark"] .toast {
+  background: rgba(10, 15, 26, 0.95) !important;
+  border: 1px solid var(--cc-border-active) !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 16px var(--cc-glow-cyan) !important;
+}
+
+/* ---------- 18. 版本徽标 ---------- */
+html[data-theme="dark"] .v13-badge {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  animation: ccPulse 3s ease-in-out infinite !important;
+}
+
+@keyframes ccPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(0, 212, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+}
+
+/* ---------- 19. 诊断报告 ---------- */
+html[data-theme="dark"] .lr-diag-report {
+  border-color: var(--cc-cyan) !important;
+  box-shadow: 0 0 20px var(--cc-glow-cyan) !important;
+}
+
+html[data-theme="dark"] .lr-diag-title {
+  background: linear-gradient(135deg, var(--cc-cyan), var(--cc-blue)) !important;
+}
+
+html[data-theme="dark"] .lr-diag-sec-h .num {
+  background: var(--cc-cyan) !important;
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3) !important;
+}
+
+html[data-theme="dark"] .lr-diag-mod {
+  background: rgba(0, 212, 255, 0.04) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+/* ---------- 20. GRAI复盘 ---------- */
+html[data-theme="dark"] .v17-grai { border-color: var(--cc-border-active) !important; }
+html[data-theme="dark"] .v17-grai-head {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), transparent) !important;
+  border-bottom-color: var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .v17-tag-g { background: rgba(56, 139, 253, 0.15); color: #60a5fa; }
+html[data-theme="dark"] .v17-tag-r { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+html[data-theme="dark"] .v17-tag-a { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+html[data-theme="dark"] .v17-tag-i { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+
+html[data-theme="dark"] .v17-factor.weak {
+  border-color: var(--cc-red) !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+/* ---------- 21. 千川大盘 ---------- */
+html[data-theme="dark"] .lr-dapan-header {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.08), rgba(56, 139, 253, 0.04)) !important;
+}
+
+html[data-theme="dark"] .lr-dapan-item .dp-val {
+  color: var(--cc-cyan) !important;
+  font-family: var(--cc-mono) !important;
+}
+
+/* ---------- 22. 上传区域 ---------- */
+html[data-theme="dark"] .upload-zone,
+html[data-theme="dark"] .csv-area,
+html[data-theme="dark"] .lr-input-card {
+  border-color: var(--cc-border) !important;
+  background: rgba(0, 212, 255, 0.02) !important;
+}
+
+html[data-theme="dark"] .upload-zone:hover,
+html[data-theme="dark"] .csv-area:hover {
+  border-color: var(--cc-cyan) !important;
+  background: rgba(0, 212, 255, 0.06) !important;
+}
+
+/* ---------- 23. 话术卡片 ---------- */
+html[data-theme="dark"] .lr-script-card.matched {
+  background: rgba(16, 185, 129, 0.08) !important;
+  border-left-color: var(--cc-green) !important;
+}
+
+html[data-theme="dark"] .lr-script-card.missing {
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-left-color: var(--cc-red) !important;
+}
+
+/* ---------- 24. 同步徽标 ---------- */
+html[data-theme="dark"] .sync-badge {
+  background: rgba(0, 212, 255, 0.08) !important;
+  color: var(--cc-text-dim) !important;
+  border: 1px solid var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .sync-badge.online {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: var(--cc-green) !important;
+  border-color: rgba(16, 185, 129, 0.2) !important;
+}
+
+html[data-theme="dark"] .sync-badge .dot { box-shadow: 0 0 6px currentColor !important; }
+
+/* ---------- 25. AI工具条 ---------- */
+html[data-theme="dark"] .v16-ai-bar {
+  background: rgba(15, 21, 37, 0.9) !important;
+  border-color: var(--cc-border-active) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+html[data-theme="dark"] .v16-ai-dot.online { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important; }
+
+/* ---------- 26. OCR面板 ---------- */
+html[data-theme="dark"] .ocr-skill-panel {
+  background: var(--cc-bg-surface) !important;
+  border-color: var(--cc-border) !important;
+}
+
+html[data-theme="dark"] .ocr-skill-header {
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.06), transparent) !important;
+  border-bottom-color: var(--cc-border) !important;
+}
+
+/* ---------- 27. 滚动条 ---------- */
+html[data-theme="dark"] ::-webkit-scrollbar { width: 8px !important; height: 8px !important; }
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: var(--cc-bg-deep) !important; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.15) !important;
+  border: 2px solid var(--cc-bg-deep) !important;
+  border-radius: 4px !important;
+}
+html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.3) !important; }
+
+/* ---------- 28. 选区 ---------- */
+html[data-theme="dark"] ::selection { background: rgba(0, 212, 255, 0.25) !important; color: #fff !important; }
+
+/* ---------- 29. 打印降级 ---------- */
+@media print {
+  html[data-theme="dark"] body::before, html[data-theme="dark"] body::after { display: none !important; }
+  html[data-theme="dark"] .panel-section, html[data-theme="dark"] .section, html[data-theme="dark"] .lr-section {
+    background: #fff !important; border-color: #ddd !important;
+  }
+}
+
+/* ---------- 30. 减弱动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme="dark"] body::before { animation: none !important; }
+  html[data-theme="dark"] .v13-badge { animation: none !important; }
+}
+
+/* ---------- 31. 移动端 ---------- */
+@media (max-width: 768px) {
+  html[data-theme="dark"] body::after { display: none !important; }
+  html[data-theme="dark"] .panel-section, html[data-theme="dark"] .section, html[data-theme="dark"] .lr-section {
+    border-radius: 10px !important;
+  }
+}
