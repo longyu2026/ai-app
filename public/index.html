@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="max-age=3600, public">
-<title>抖店数据工作台（三合一）v33 · 路径修复版</title>
+<title>抖店数据工作台（三合一）v34 · OCR修复版</title>
 <script src="./lib/xlsx.full.min.js"></script>
 <script src="./lib/echarts.min.js"></script>
 <script src="./lib/dexie.min.js"></script>
@@ -1534,14 +1534,11 @@ html[data-theme=dark] #v13LiveNav .v13-secnav-report{border-color:rgba(255,255,2
         <button class="lr-data-tab" data-tab="qianchuan" onclick="lrSwitchDataTab('qianchuan')">🔌 千川API</button>
       </div>
       <div class="lr-data-tabs-body">
-        <!-- Tab 1：粘贴文本兜底 -->
+        <!-- Tab 1：粘贴文本兜底（v34：已合并到上方三级保底区域，此处保留提示） -->
         <div class="lr-data-tab-panel active" data-panel="paste">
-          <div class="lr-text-fallback" id="lrTextFallback">
-            <h5>📝 推荐：直接粘贴大屏文字（截图识别率低时兜底）</h5>
-            <p>①复制千川后台大屏数据 ②粘贴到下方 ③点「📊 AI自动解析文本」一键识别所有指标</p>
-            <textarea id="lrTextPasteInput" placeholder="粘贴大屏截图中的文字内容，例如：&#10;整体成交金额：12,580.00&#10;净成交金额：10,200.00&#10;成交订单数：86&#10;投放消耗：3,500.00&#10;支付ROI：3.59&#10;..."></textarea>
-            <button class="btn btn-primary btn-sm" style="margin-top:6px" onclick="lrParsePastedText()">📊 AI自动解析文本</button>
-            <button class="btn btn-ghost btn-sm" style="margin-top:6px" onclick="var i=$('lrTextPasteInput');i.value='';i.focus();showToast('已清空')">🗑️ 清空文本</button>
+          <div id="lrTextFallback" style="padding:16px;text-align:center;color:var(--gray-500);font-size:13px;background:var(--gray-50);border-radius:8px">
+            <p style="margin:0 0 8px">📝 文字粘贴功能已整合到上方的<span style="color:var(--primary);font-weight:600">三级保底·文字识别</span>区域</p>
+            <p style="margin:0;font-size:12px;color:var(--gray-400)">请使用上方卡片中的粘贴区域进行文字识别</p>
           </div>
         </div>
         <!-- Tab 2：扣子 AI 助手（v26 新增） -->
@@ -2890,7 +2887,7 @@ function lrRunOCR(imgData,statusEl){
     var recogPromise=Tesseract.createWorker('chi_sim+eng',1,{
       workerPath:'./lib/worker.min.js',
       corePath:'./lib',
-      langPath:'./lib/lang',
+      langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
       logger:function(m){
         if(m.status==='loading language traineddata'){statusEl.innerHTML='<span class="spin"></span>正在加载本地中文语言包('+Math.round(m.progress*100)+'%)，约7MB，请稍候'}
         else if(m.status==='initializing api'||m.status==='initializing tesseract'){statusEl.innerHTML='<span class="spin"></span>正在初始化识别引擎…'}
@@ -2965,7 +2962,7 @@ function lrBlockOCR(imgData,statusEl,tier1Text){
       Tesseract.recognize(blkData,'chi_sim+eng',{
         workerPath:'./lib/worker.min.js',
         corePath:'./lib',
-        langPath:'./lib/lang',
+        langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
         logger:function(m){if(m.status==='recognizing text'){statusEl.innerHTML='<span class="spin"></span>二级识别'+blk.name+'… '+Math.round(m.progress*100)+'%'}}
       }).then(function(result){
         allText+='\n'+(result.data.text||'');
@@ -3015,8 +3012,8 @@ function lrShowTextFallback(){
     var fb=$('lrTextFallback');if(fb)fb.style.display='block';
     /* v32: 同时显示下方的三级保底文字识别区域 */
     var tier3=$('lrTier3TextArea');if(tier3)tier3.style.display='block';
-    /* v32: 自动聚焦到文本输入框 */
-    setTimeout(function(){var inp=$('lrTextPasteInput');if(inp){inp.focus();inp.scrollIntoView({behavior:'smooth',block:'center'});}},200);
+    /* v32: 自动聚焦到文本输入框（v34：优先聚焦三级保底区域） */
+    setTimeout(function(){var inp=$('lrTier3TextInput')||$('lrTextPasteInput');if(inp){inp.focus();inp.scrollIntoView({behavior:'smooth',block:'center'});}},200);
   }catch(e){console.error('[v32] lrShowTextFallback error:',e);}
 }
 /* v28 数据录入区 Tab 切换 */
@@ -3027,7 +3024,10 @@ function lrSwitchDataTab(name){
 }
 function lrParsePastedText(){
   try{
-    var text=$('lrTextPasteInput').value.trim();
+    /* v34: 兼容迁移——优先从三级保底区域读取，回退到旧粘贴区 */
+    var tier3=$('lrTier3TextInput');
+    var text = tier3 ? tier3.value.trim() : '';
+    if(!text){var old=$('lrTextPasteInput');if(old)text=old.value.trim();}
     if(!text){showToast('请先粘贴大屏文字内容');return}
     var status=$('lrOcrStatus');
     if(status){status.style.display='block';status.style.background='#E3F2FD';status.style.color='#1976D2';status.innerHTML='<span class="spin"></span>正在解析粘贴文本…';}
@@ -5419,7 +5419,7 @@ function lrRestoreReport(){
 
 
 /* ============= 各时段截图上传 ============= */
-function lrTimeSlotImg(input){var file=input.files[0];if(!file)return;var card=input.closest('.lr-time-card');var statusEl=card?card.querySelector('.ts-ocr-status'):null;var metricsEl=card?card.querySelector('.ts-metrics'):null;var reader=new FileReader();reader.onload=function(e){var img=document.createElement('img');img.src=e.target.result;img.style.maxWidth='100%';img.style.maxHeight='150px';img.style.borderRadius='6px';img.style.border='1px solid var(--gray-200)';img.style.marginTop='6px';var c=input.parentElement;var ex=c.querySelector('img');if(ex)ex.remove();var ph=c.querySelector('.ts-placeholder');if(ph)ph.style.display='none';c.appendChild(img);if(statusEl){statusEl.style.display='block';statusEl.style.background='#E3F2FD';statusEl.style.color='#1976D2';statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'}lrPreprocessImage(e.target.result,function(ppData,isDark){if(statusEl)statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'+(isDark?'（暗色截图已自动增强）':'');var timeoutP=new Promise(function(_,rej){setTimeout(function(){rej(new Error('TIMEOUT'))},45000)});var recogP=Tesseract.createWorker('chi_sim+eng',1,{workerPath:'./lib/worker.min.js',corePath:'./lib',langPath:'./lib/lang',logger:function(m){if(m.status==='loading language traineddata'&&statusEl)statusEl.innerHTML='<span class="spin"></span>加载语言包…'+Math.round(m.progress*100)+'%';else if(m.status==='recognizing text'&&statusEl)statusEl.innerHTML='<span class="spin"></span>识别中…'+Math.round(m.progress*100)+'%'}}).then(function(w){return w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'}).then(function(){return w.recognize(ppData)}).then(function(r){return w.terminate().then(function(){return r})})});Promise.race([recogP,timeoutP]).then(function(result){var text=result.data.text||'';var metrics=lrExtractMetrics(text);var matched=Object.keys(metrics).filter(function(k){return metrics[k]&&!k.endsWith('_conflict')});if(statusEl){statusEl.style.background='#E8F5E9';statusEl.style.color='#00B578';statusEl.innerHTML='🟢 识别完成，提取到 '+matched.length+' 个指标'}if(metricsEl&&matched.length>0){metricsEl.style.display='block';var grid=metricsEl.querySelector('.ts-metrics-grid');var diag=metricsEl.querySelector('.ts-diagnosis');if(grid){var html='';var labels={'overallGMV':'整体成交','netGMV':'净成交','orderCount':'订单数','roi':'支付ROI','spend':'投放消耗','gpm':'GPM','viewRate':'观看率','convertRate':'转化率','stayDuration':'停留时长','refundRate':'退款率','exposureCount':'曝光人数','clickCount':'点击人数','buyCount':'成交人数','avgPrice':'客单价'};matched.forEach(function(k){var label=labels[k]||k;var val=metrics[k];html+='<div style="background:#fff;padding:3px 6px;border-radius:4px;border:1px solid var(--gray-100)"><span style="color:var(--gray-500)">'+label+'</span><br><b style="color:var(--primary)">'+val+'</b></div>'});grid.innerHTML=html}if(diag){var diagHtml='';var gmv=metrics.overallGMV||metrics.netGMV;var roi=metrics.roi;var refund=metrics.refundRate;if(gmv)diagHtml+='本时段成交 <b>'+gmv+'</b>；';if(roi)diagHtml+='ROI <b>'+roi+'</b>；';if(refund)diagHtml+='退款率 <b>'+refund+'</b>；';if(diagHtml)diag.innerHTML='💡 '+diagHtml+'请结合人货场流分析该时段表现';else diag.innerHTML='💡 已识别截图文字，请核对指标并在下方填写分析'}}}).catch(function(err){if(statusEl){statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';statusEl.innerHTML='🔴 识别失败：'+(err.message||'未知错误')+'，请手动粘贴文字'}})})};reader.readAsDataURL(file)}
+function lrTimeSlotImg(input){var file=input.files[0];if(!file)return;var card=input.closest('.lr-time-card');var statusEl=card?card.querySelector('.ts-ocr-status'):null;var metricsEl=card?card.querySelector('.ts-metrics'):null;var reader=new FileReader();reader.onload=function(e){var img=document.createElement('img');img.src=e.target.result;img.style.maxWidth='100%';img.style.maxHeight='150px';img.style.borderRadius='6px';img.style.border='1px solid var(--gray-200)';img.style.marginTop='6px';var c=input.parentElement;var ex=c.querySelector('img');if(ex)ex.remove();var ph=c.querySelector('.ts-placeholder');if(ph)ph.style.display='none';c.appendChild(img);if(statusEl){statusEl.style.display='block';statusEl.style.background='#E3F2FD';statusEl.style.color='#1976D2';statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'}lrPreprocessImage(e.target.result,function(ppData,isDark){if(statusEl)statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'+(isDark?'（暗色截图已自动增强）':'');var timeoutP=new Promise(function(_,rej){setTimeout(function(){rej(new Error('TIMEOUT'))},45000)});var recogP=Tesseract.createWorker('chi_sim+eng',1,{workerPath:'./lib/worker.min.js',corePath:'./lib',langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',logger:function(m){if(m.status==='loading language traineddata'&&statusEl)statusEl.innerHTML='<span class="spin"></span>加载语言包…'+Math.round(m.progress*100)+'%';else if(m.status==='recognizing text'&&statusEl)statusEl.innerHTML='<span class="spin"></span>识别中…'+Math.round(m.progress*100)+'%'}}).then(function(w){return w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'}).then(function(){return w.recognize(ppData)}).then(function(r){return w.terminate().then(function(){return r})})});Promise.race([recogP,timeoutP]).then(function(result){var text=result.data.text||'';var metrics=lrExtractMetrics(text);var matched=Object.keys(metrics).filter(function(k){return metrics[k]&&!k.endsWith('_conflict')});if(statusEl){statusEl.style.background='#E8F5E9';statusEl.style.color='#00B578';statusEl.innerHTML='🟢 识别完成，提取到 '+matched.length+' 个指标'}if(metricsEl&&matched.length>0){metricsEl.style.display='block';var grid=metricsEl.querySelector('.ts-metrics-grid');var diag=metricsEl.querySelector('.ts-diagnosis');if(grid){var html='';var labels={'overallGMV':'整体成交','netGMV':'净成交','orderCount':'订单数','roi':'支付ROI','spend':'投放消耗','gpm':'GPM','viewRate':'观看率','convertRate':'转化率','stayDuration':'停留时长','refundRate':'退款率','exposureCount':'曝光人数','clickCount':'点击人数','buyCount':'成交人数','avgPrice':'客单价'};matched.forEach(function(k){var label=labels[k]||k;var val=metrics[k];html+='<div style="background:#fff;padding:3px 6px;border-radius:4px;border:1px solid var(--gray-100)"><span style="color:var(--gray-500)">'+label+'</span><br><b style="color:var(--primary)">'+val+'</b></div>'});grid.innerHTML=html}if(diag){var diagHtml='';var gmv=metrics.overallGMV||metrics.netGMV;var roi=metrics.roi;var refund=metrics.refundRate;if(gmv)diagHtml+='本时段成交 <b>'+gmv+'</b>；';if(roi)diagHtml+='ROI <b>'+roi+'</b>；';if(refund)diagHtml+='退款率 <b>'+refund+'</b>；';if(diagHtml)diag.innerHTML='💡 '+diagHtml+'请结合人货场流分析该时段表现';else diag.innerHTML='💡 已识别截图文字，请核对指标并在下方填写分析'}}}).catch(function(err){if(statusEl){statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';statusEl.innerHTML='🔴 识别失败：'+(err.message||'未知错误')+'，请手动粘贴文字'}})})};reader.readAsDataURL(file)}
 
 /* ============= 千川大盘数据录入模块 ============= */
 /* 固定指标顺序（严格锁定，输出必须完全按照这个顺序） */
@@ -5991,7 +5991,7 @@ function maRunImgOCR(file, status){
       return Tesseract.recognize(ppData, 'chi_sim+eng', {
         workerPath: './lib/worker.min.js',
         corePath: './lib',
-        langPath: './lib/lang',
+        langPath: 'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
         logger: function(m){
           if(m.status === 'recognizing text') status.innerHTML = '<span class="spin"></span>正在识别... ' + Math.round(m.progress*100) + '%';
         }
@@ -6786,7 +6786,7 @@ function lrApiTest(){
                     Tesseract.recognize(imgData,'chi_sim+eng',{
                       workerPath:'./lib/worker.min.js',
                       corePath:'./lib',
-                      langPath:'./lib/lang',
+                      langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
                       logger:function(m){
                         if(m.status==='recognizing text'){
                           status.innerHTML='<span class="spin"></span>第'+pageNum+'页OCR中… '+Math.round(m.progress*100)+'%'
@@ -6838,7 +6838,7 @@ function lrApiTest(){
         Tesseract.recognize(imgDataList[idx],'eng',{
           workerPath:'./lib/worker.min.js',
           corePath:'./lib',
-          langPath:'./lib/lang',
+          langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
           tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
             if(m.status==='recognizing text'){
@@ -6972,7 +6972,7 @@ function lrApiTest(){
         Tesseract.recognize(img.src,'eng',{
           workerPath:'./lib/worker.min.js',
           corePath:'./lib',
-          langPath:'./lib/lang',
+          langPath:'https://cdn.jsdelivr.net/gh/naptha/tessdata@gh-pages/4.0.0',
           tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
             if(m.status==='recognizing text'){
@@ -7620,6 +7620,15 @@ if(window.echarts){
   echarts.init = function(el, theme, opts){
     var dark = document.documentElement.getAttribute('data-theme')==='dark';
     return v17InitOrig.call(echarts, el, dark?'v17dark':(theme||null), opts);
+  };
+} else {
+  /* v34: echarts未加载时的安全兜底，防止图表初始化报错 */
+  window.echarts = {
+    init: function(el){ 
+      if(el) el.innerHTML='<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:13px">📊 图表库加载失败，请刷新页面重试</div>';
+      return {setOption:function(){},resize:function(){},dispose:function(){}}; 
+    },
+    getInstanceByDom: function(){ return null; }
   };
 }
 
