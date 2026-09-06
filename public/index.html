@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="max-age=3600, public">
-<title>抖店数据工作台（三合一）v32 · 全功能优化版</title>
-<script src="/lib/xlsx.full.min.js"></script>
-<script src="/lib/echarts.min.js"></script>
-<script src="/lib/dexie.min.js"></script>
-<script src="/lib/html2pdf.bundle.min.js"></script>
-<script src="/lib/docx.umd.js"></script>
-<script src="/lib/mammoth.browser.min.js"></script><!-- v19: docx 话术本地解析 -->
+<title>抖店数据工作台（三合一）v33 · 路径修复版</title>
+<script src="./lib/xlsx.full.min.js"></script>
+<script src="./lib/echarts.min.js"></script>
+<script src="./lib/dexie.min.js"></script>
+<script src="./lib/html2pdf.bundle.min.js"></script>
+<script src="./lib/docx.umd.js"></script>
+<script src="./lib/mammoth.browser.min.js"></script><!-- v19: docx 话术本地解析 -->
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -2809,9 +2809,13 @@ var LR_REDLINE_ASSIST=['抢话','打断','沉默','无反应','不配合','出�
 
 function lrLoadTesseract(cb){
   if(window.Tesseract){cb(null);return}
-  var s=document.createElement('script');s.src='/lib/tesseract.min.js';
-  s.onload=function(){cb(null)};s.onerror=function(){cb(new Error('OCR引擎加载失败'))};
-  document.head.appendChild(s)
+  var s=document.createElement('script');s.src='./lib/tesseract.min.js';
+  var loaded=false;
+  s.onload=function(){loaded=true;cb(null)};
+  s.onerror=function(){if(!loaded){loaded=true;cb(new Error('OCR引擎加载失败'))}};
+  document.head.appendChild(s);
+  /* v33: 脚本加载30秒超时保护 */
+  setTimeout(function(){if(!loaded){loaded=true;cb(new Error('OCR引擎加载超时'))}},30000)
 }
 function lrHandleOverallImg(event){
   var file=event.target.files[0];if(!file)return;
@@ -2820,7 +2824,7 @@ function lrHandleOverallImg(event){
     var preview=$('lrImgPreview');preview.innerHTML='';preview.appendChild(img);
     var status=$('lrOcrStatus');status.style.display='block';status.style.background='#E3F2FD';status.style.color='#1976D2';status.innerHTML='<span class="spin"></span>正在初始化识别引擎…';
     lrLoadTesseract(function(err){
-      if(err){status.style.background='#FFE8E8';status.style.color='#FF4242';status.innerHTML='OCR引擎加载失败，请使用手动修正功能';lrToggleManualInput();return}
+      if(err){status.style.background='#FFE8E8';status.style.color='#FF4242';status.innerHTML='🔴 '+(err.message.indexOf('超时')>=0?'OCR引擎加载超时，网络可能较慢':'OCR引擎加载失败')+'，已启用文本粘贴兜底方案';lrShowTextFallback();lrToggleManualInput();return}
       lrRunOCR(e.target.result,status)
     })
   };reader.readAsDataURL(file)
@@ -2884,9 +2888,9 @@ function lrRunOCR(imgData,statusEl){
     var timeoutPromise=new Promise(function(_,reject){setTimeout(function(){reject(new Error('TIMEOUT'))},60000)});
     /* v18: PSM 6 统一文本块模式 + 保留词间空格——密集数据表格识别质量关键参数 */
     var recogPromise=Tesseract.createWorker('chi_sim+eng',1,{
-      workerPath:'/lib/worker.min.js',
-      corePath:'/lib',
-      langPath:'/lib/lang',
+      workerPath:'./lib/worker.min.js',
+      corePath:'./lib',
+      langPath:'./lib/lang',
       logger:function(m){
         if(m.status==='loading language traineddata'){statusEl.innerHTML='<span class="spin"></span>正在加载本地中文语言包('+Math.round(m.progress*100)+'%)，约7MB，请稍候'}
         else if(m.status==='initializing api'||m.status==='initializing tesseract'){statusEl.innerHTML='<span class="spin"></span>正在初始化识别引擎…'}
@@ -2959,9 +2963,9 @@ function lrBlockOCR(imgData,statusEl,tier1Text){
       ctx.drawImage(img,blk.x,blk.y,blk.w,blk.h,0,0,blk.w,blk.h);
       var blkData=canvas.toDataURL('image/png');
       Tesseract.recognize(blkData,'chi_sim+eng',{
-        workerPath:'/lib/worker.min.js',
-        corePath:'/lib',
-        langPath:'/lib/lang',
+        workerPath:'./lib/worker.min.js',
+        corePath:'./lib',
+        langPath:'./lib/lang',
         logger:function(m){if(m.status==='recognizing text'){statusEl.innerHTML='<span class="spin"></span>二级识别'+blk.name+'… '+Math.round(m.progress*100)+'%'}}
       }).then(function(result){
         allText+='\n'+(result.data.text||'');
@@ -5415,7 +5419,7 @@ function lrRestoreReport(){
 
 
 /* ============= 各时段截图上传 ============= */
-function lrTimeSlotImg(input){var file=input.files[0];if(!file)return;var card=input.closest('.lr-time-card');var statusEl=card?card.querySelector('.ts-ocr-status'):null;var metricsEl=card?card.querySelector('.ts-metrics'):null;var reader=new FileReader();reader.onload=function(e){var img=document.createElement('img');img.src=e.target.result;img.style.maxWidth='100%';img.style.maxHeight='150px';img.style.borderRadius='6px';img.style.border='1px solid var(--gray-200)';img.style.marginTop='6px';var c=input.parentElement;var ex=c.querySelector('img');if(ex)ex.remove();var ph=c.querySelector('.ts-placeholder');if(ph)ph.style.display='none';c.appendChild(img);if(statusEl){statusEl.style.display='block';statusEl.style.background='#E3F2FD';statusEl.style.color='#1976D2';statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'}lrPreprocessImage(e.target.result,function(ppData,isDark){if(statusEl)statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'+(isDark?'（暗色截图已自动增强）':'');var timeoutP=new Promise(function(_,rej){setTimeout(function(){rej(new Error('TIMEOUT'))},45000)});var recogP=Tesseract.createWorker('chi_sim+eng',1,{workerPath:'/lib/worker.min.js',corePath:'/lib',langPath:'/lib/lang',logger:function(m){if(m.status==='loading language traineddata'&&statusEl)statusEl.innerHTML='<span class="spin"></span>加载语言包…'+Math.round(m.progress*100)+'%';else if(m.status==='recognizing text'&&statusEl)statusEl.innerHTML='<span class="spin"></span>识别中…'+Math.round(m.progress*100)+'%'}}).then(function(w){return w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'}).then(function(){return w.recognize(ppData)}).then(function(r){return w.terminate().then(function(){return r})})});Promise.race([recogP,timeoutP]).then(function(result){var text=result.data.text||'';var metrics=lrExtractMetrics(text);var matched=Object.keys(metrics).filter(function(k){return metrics[k]&&!k.endsWith('_conflict')});if(statusEl){statusEl.style.background='#E8F5E9';statusEl.style.color='#00B578';statusEl.innerHTML='🟢 识别完成，提取到 '+matched.length+' 个指标'}if(metricsEl&&matched.length>0){metricsEl.style.display='block';var grid=metricsEl.querySelector('.ts-metrics-grid');var diag=metricsEl.querySelector('.ts-diagnosis');if(grid){var html='';var labels={'overallGMV':'整体成交','netGMV':'净成交','orderCount':'订单数','roi':'支付ROI','spend':'投放消耗','gpm':'GPM','viewRate':'观看率','convertRate':'转化率','stayDuration':'停留时长','refundRate':'退款率','exposureCount':'曝光人数','clickCount':'点击人数','buyCount':'成交人数','avgPrice':'客单价'};matched.forEach(function(k){var label=labels[k]||k;var val=metrics[k];html+='<div style="background:#fff;padding:3px 6px;border-radius:4px;border:1px solid var(--gray-100)"><span style="color:var(--gray-500)">'+label+'</span><br><b style="color:var(--primary)">'+val+'</b></div>'});grid.innerHTML=html}if(diag){var diagHtml='';var gmv=metrics.overallGMV||metrics.netGMV;var roi=metrics.roi;var refund=metrics.refundRate;if(gmv)diagHtml+='本时段成交 <b>'+gmv+'</b>；';if(roi)diagHtml+='ROI <b>'+roi+'</b>；';if(refund)diagHtml+='退款率 <b>'+refund+'</b>；';if(diagHtml)diag.innerHTML='💡 '+diagHtml+'请结合人货场流分析该时段表现';else diag.innerHTML='💡 已识别截图文字，请核对指标并在下方填写分析'}}}).catch(function(err){if(statusEl){statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';statusEl.innerHTML='🔴 识别失败：'+(err.message||'未知错误')+'，请手动粘贴文字'}})})};reader.readAsDataURL(file)}
+function lrTimeSlotImg(input){var file=input.files[0];if(!file)return;var card=input.closest('.lr-time-card');var statusEl=card?card.querySelector('.ts-ocr-status'):null;var metricsEl=card?card.querySelector('.ts-metrics'):null;var reader=new FileReader();reader.onload=function(e){var img=document.createElement('img');img.src=e.target.result;img.style.maxWidth='100%';img.style.maxHeight='150px';img.style.borderRadius='6px';img.style.border='1px solid var(--gray-200)';img.style.marginTop='6px';var c=input.parentElement;var ex=c.querySelector('img');if(ex)ex.remove();var ph=c.querySelector('.ts-placeholder');if(ph)ph.style.display='none';c.appendChild(img);if(statusEl){statusEl.style.display='block';statusEl.style.background='#E3F2FD';statusEl.style.color='#1976D2';statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'}lrPreprocessImage(e.target.result,function(ppData,isDark){if(statusEl)statusEl.innerHTML='<span class="spin"></span>正在识别该时段截图文字…'+(isDark?'（暗色截图已自动增强）':'');var timeoutP=new Promise(function(_,rej){setTimeout(function(){rej(new Error('TIMEOUT'))},45000)});var recogP=Tesseract.createWorker('chi_sim+eng',1,{workerPath:'./lib/worker.min.js',corePath:'./lib',langPath:'./lib/lang',logger:function(m){if(m.status==='loading language traineddata'&&statusEl)statusEl.innerHTML='<span class="spin"></span>加载语言包…'+Math.round(m.progress*100)+'%';else if(m.status==='recognizing text'&&statusEl)statusEl.innerHTML='<span class="spin"></span>识别中…'+Math.round(m.progress*100)+'%'}}).then(function(w){return w.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'}).then(function(){return w.recognize(ppData)}).then(function(r){return w.terminate().then(function(){return r})})});Promise.race([recogP,timeoutP]).then(function(result){var text=result.data.text||'';var metrics=lrExtractMetrics(text);var matched=Object.keys(metrics).filter(function(k){return metrics[k]&&!k.endsWith('_conflict')});if(statusEl){statusEl.style.background='#E8F5E9';statusEl.style.color='#00B578';statusEl.innerHTML='🟢 识别完成，提取到 '+matched.length+' 个指标'}if(metricsEl&&matched.length>0){metricsEl.style.display='block';var grid=metricsEl.querySelector('.ts-metrics-grid');var diag=metricsEl.querySelector('.ts-diagnosis');if(grid){var html='';var labels={'overallGMV':'整体成交','netGMV':'净成交','orderCount':'订单数','roi':'支付ROI','spend':'投放消耗','gpm':'GPM','viewRate':'观看率','convertRate':'转化率','stayDuration':'停留时长','refundRate':'退款率','exposureCount':'曝光人数','clickCount':'点击人数','buyCount':'成交人数','avgPrice':'客单价'};matched.forEach(function(k){var label=labels[k]||k;var val=metrics[k];html+='<div style="background:#fff;padding:3px 6px;border-radius:4px;border:1px solid var(--gray-100)"><span style="color:var(--gray-500)">'+label+'</span><br><b style="color:var(--primary)">'+val+'</b></div>'});grid.innerHTML=html}if(diag){var diagHtml='';var gmv=metrics.overallGMV||metrics.netGMV;var roi=metrics.roi;var refund=metrics.refundRate;if(gmv)diagHtml+='本时段成交 <b>'+gmv+'</b>；';if(roi)diagHtml+='ROI <b>'+roi+'</b>；';if(refund)diagHtml+='退款率 <b>'+refund+'</b>；';if(diagHtml)diag.innerHTML='💡 '+diagHtml+'请结合人货场流分析该时段表现';else diag.innerHTML='💡 已识别截图文字，请核对指标并在下方填写分析'}}}).catch(function(err){if(statusEl){statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';statusEl.innerHTML='🔴 识别失败：'+(err.message||'未知错误')+'，请手动粘贴文字'}})})};reader.readAsDataURL(file)}
 
 /* ============= 千川大盘数据录入模块 ============= */
 /* 固定指标顺序（严格锁定，输出必须完全按照这个顺序） */
@@ -5959,14 +5963,20 @@ function maHandleImgOCR(event){
   // Load Tesseract if needed
   if(!window.Tesseract){
     var s = document.createElement('script');
-    s.src = '/lib/tesseract.min.js';
-    s.onload = function(){ maRunImgOCR(file, status); };
+    s.src = './lib/tesseract.min.js';
+    var maTessLoaded=false;
+    s.onload = function(){ maTessLoaded=true; maRunImgOCR(file, status); };
     s.onerror = function(){
+      if(!maTessLoaded){maTessLoaded=true;
       status.style.background = '#FFEBEE';
       status.style.color = '#FF4242';
-      status.innerHTML = 'OCR引擎加载失败，请使用文本粘贴模式';
+      status.innerHTML = '🔴 OCR引擎加载失败，请使用文本粘贴模式';}
     };
     document.head.appendChild(s);
+    /* v33: 30秒加载超时保护 */
+    setTimeout(function(){if(!maTessLoaded){maTessLoaded=true;
+      status.style.background='#FFF3E0';status.style.color='#FF9500';
+      status.innerHTML='🔴 OCR引擎加载超时(30秒)，请使用文本粘贴模式';}},30000);
   } else {
     maRunImgOCR(file, status);
   }
@@ -5979,9 +5989,9 @@ function maRunImgOCR(file, status){
     var timeout = new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('TIMEOUT')); }, 30000); });
     var recog = lrPreprocessImageP(e.target.result).then(function(ppData){
       return Tesseract.recognize(ppData, 'chi_sim+eng', {
-        workerPath: '/lib/worker.min.js',
-        corePath: '/lib',
-        langPath: '/lib/lang',
+        workerPath: './lib/worker.min.js',
+        corePath: './lib',
+        langPath: './lib/lang',
         logger: function(m){
           if(m.status === 'recognizing text') status.innerHTML = '<span class="spin"></span>正在识别... ' + Math.round(m.progress*100) + '%';
         }
@@ -6677,9 +6687,9 @@ function lrApiTest(){
   function loadPDFJS(cb){
     if(window.pdfjsLib){cb(null);return}
     var s=D.createElement('script');
-    s.src='/lib/pdf.min.js';
+    s.src='./lib/pdf.min.js';
     s.onload=function(){
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc='/lib/pdf.worker.min.js';
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc='./lib/pdf.worker.min.js';
       cb(null)
     };
     s.onerror=function(){cb(new Error('PDF.js加载失败'))};
@@ -6774,9 +6784,9 @@ function lrApiTest(){
                     preview.appendChild(img);
 
                     Tesseract.recognize(imgData,'chi_sim+eng',{
-                      workerPath:'/lib/worker.min.js',
-                      corePath:'/lib',
-                      langPath:'/lib/lang',
+                      workerPath:'./lib/worker.min.js',
+                      corePath:'./lib',
+                      langPath:'./lib/lang',
                       logger:function(m){
                         if(m.status==='recognizing text'){
                           status.innerHTML='<span class="spin"></span>第'+pageNum+'页OCR中… '+Math.round(m.progress*100)+'%'
@@ -6826,9 +6836,9 @@ function lrApiTest(){
           return
         }
         Tesseract.recognize(imgDataList[idx],'eng',{
-          workerPath:'/lib/worker.min.js',
-          corePath:'/lib',
-          langPath:'/lib/lang',
+          workerPath:'./lib/worker.min.js',
+          corePath:'./lib',
+          langPath:'./lib/lang',
           tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
             if(m.status==='recognizing text'){
@@ -6960,9 +6970,9 @@ function lrApiTest(){
         if(verifyBody)verifyBody.innerHTML='<span class="spin"></span>正在执行数字二次聚焦校验…';
 
         Tesseract.recognize(img.src,'eng',{
-          workerPath:'/lib/worker.min.js',
-          corePath:'/lib',
-          langPath:'/lib/lang',
+          workerPath:'./lib/worker.min.js',
+          corePath:'./lib',
+          langPath:'./lib/lang',
           tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
             if(m.status==='recognizing text'){
