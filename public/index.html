@@ -8744,7 +8744,8 @@ function v27NavToggle(e){
   };
 
   function fallbackToTesseract(image, lang, options){
-    state.dead = true; noteErr('已自动切换 Tesseract 备用引擎');
+    state.dead = true; state.fellBack = true;
+    noteWarn('已自动切换 Tesseract 备用引擎');
     return realTesseract().then(function(T){ return T.recognize(image, lang, options || {}); });
   }
 
@@ -8839,7 +8840,7 @@ function v27NavToggle(e){
           var kwHit = liveKeywords.filter(function(kw){ return ntext.indexOf(kw) >= 0; }).length;
           if(matchedCount >= 5 || kwHit >= 5){
             statusEl.style.background = '#E8F5E9'; statusEl.style.color = '#00B578';
-            statusEl.innerHTML = '🟢 PaddleOCR 识别完成！共识别 ' + matchedCount + ' 个指标，已自动填入下方指标卡（请逐项核对）';
+            statusEl.innerHTML = '🟢 ' + (state.fellBack ? 'Tesseract 备用引擎' : 'PaddleOCR') + ' 识别完成！共识别 ' + matchedCount + ' 个指标，已自动填入下方指标卡（请逐项核对）';
             lrParseOCRText(ntext, metrics); lrDaPanDoParse(ntext);
           }else{
             statusEl.style.background = '#FFF3E0'; statusEl.style.color = '#FF9500';
