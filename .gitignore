@@ -93,3 +93,7 @@ logs/
 # CodeGraph index
 .codegraph
 .codegraph/
+
+# OCR 语言包（Tesseract 离线兜底，必须入库）
+!public/lib/lang/*.gz
+!lib/lang/*.gz
