@@ -8483,8 +8483,8 @@ function v27NavToggle(e){
 (function(){
   'use strict';
   var ENG_KEY = 'lr_ocr_engine_v31';
-  var DET_PATH = 'lib/paddle-models/det/model.json';
-  var REC_PATH = 'lib/paddle-models/rec/model.json';
+  var DET_PATH = new URL('lib/paddle-models/det/model.json', document.baseURI).href;
+  var REC_PATH = new URL('lib/paddle-models/rec/model.json', document.baseURI).href;
 
   function getEng(){ return localStorage.getItem(ENG_KEY) || 'paddle'; }
   function setEng(e){ try{ localStorage.setItem(ENG_KEY, e); }catch(err){} }
