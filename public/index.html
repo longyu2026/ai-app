@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Cache-Control" content="max-age=3600, public">
-<title>抖店数据工作台（三合一）v35 · OCR语言包修复版</title>
+<title>抖店数据工作台（三合一）v36 · OCR CDN镜像修复版</title>
 <script src="./lib/xlsx.full.min.js"></script>
 <script src="./lib/echarts.min.js"></script>
 <script src="./lib/dexie.min.js"></script>
@@ -2882,15 +2882,18 @@ function lrRunOCR(imgData,statusEl){
   statusEl.innerHTML='<span class="spin"></span>正在预处理图片（暗色截图自动反色增强）…';
   lrPreprocessImage(imgData,function(ppData,isDark){
     statusEl.innerHTML='<span class="spin"></span>正在加载识别引擎核心…'+(isDark?'（已检测到暗色截图，自动反色优化）':'');
-    var timeoutPromise=new Promise(function(_,reject){setTimeout(function(){reject(new Error('TIMEOUT'))},60000)});
+    var timeoutPromise=new Promise(function(_,reject){setTimeout(function(){reject(new Error('TIMEOUT'))},120000)});
     /* v18: PSM 6 统一文本块模式 + 保留词间空格——密集数据表格识别质量关键参数 */
     var recogPromise=Tesseract.createWorker('chi_sim+eng',1,{
       workerPath:'./lib/worker.min.js',
       corePath:'./lib',
       logger:function(m){
-        if(m.status==='loading language traineddata'){statusEl.innerHTML='<span class="spin"></span>正在加载中文语言包('+Math.round(m.progress*100)+'%)，请稍候'}
+        console.log('[OCR]',m.status,Math.round((m.progress||0)*100)+'%',m);
+        if(m.status==='loading tesseract core'){statusEl.innerHTML='<span class="spin"></span>正在加载OCR核心引擎('+Math.round(m.progress*100)+'%)…'}
+        else if(m.status==='loading language traineddata'){statusEl.innerHTML='<span class="spin"></span>正在下载中文语言包('+Math.round(m.progress*100)+'%)，首次约20MB请耐心等待…'}
         else if(m.status==='initializing api'||m.status==='initializing tesseract'){statusEl.innerHTML='<span class="spin"></span>正在初始化识别引擎…'}
         else if(m.status==='recognizing text'){statusEl.innerHTML='<span class="spin"></span>正在识别图片中的文字… '+Math.round(m.progress*100)+'%'}
+        else if(m.status==='error'||m.status==='failed'){statusEl.innerHTML='<span class="spin"></span>⚠️ OCR '+m.status+': '+(m.message||'')}
       }
     }).then(function(worker){
       return worker.setParameters({tessedit_pageseg_mode:'6',preserve_interword_spaces:'1'}).then(function(){return worker.recognize(ppData)}).then(function(res){
@@ -2924,9 +2927,9 @@ function lrRunOCR(imgData,statusEl){
         statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';
         statusEl.innerHTML='🔴 识别引擎加载超时(60秒)，已启用文本粘贴兜底方案';
         lrShowTextFallback()
-      }else if(msg.indexOf('network')>=0||msg.indexOf('fetch')>=0||msg.indexOf('Failed')>=0){
+      }else if(msg.indexOf('network')>=0||msg.indexOf('fetch')>=0||msg.indexOf('Failed')>=0||msg.indexOf('Network error')>=0){
         statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';
-        statusEl.innerHTML='🔴 网络异常无法加载语言包，已启用文本粘贴兜底方案';
+        statusEl.innerHTML='🔴 网络异常无法下载语言包(需约20MB)，请检查网络后刷新重试，或使用文本粘贴兜底方案';
         lrShowTextFallback()
       }else{
         statusEl.style.background='#FFEBEE';statusEl.style.color='#FF4242';
@@ -2961,7 +2964,11 @@ function lrBlockOCR(imgData,statusEl,tier1Text){
       Tesseract.recognize(blkData,'chi_sim+eng',{
         workerPath:'./lib/worker.min.js',
         corePath:'./lib',
-        logger:function(m){if(m.status==='recognizing text'){statusEl.innerHTML='<span class="spin"></span>二级识别'+blk.name+'… '+Math.round(m.progress*100)+'%'}}
+        logger:function(m){
+          console.log('[OCR-block]',m.status,Math.round((m.progress||0)*100)+'%');
+          if(m.status==='loading language traineddata'){statusEl.innerHTML='<span class="spin"></span>二级识别'+blk.name+'：下载语言包('+Math.round(m.progress*100)+'%)…'}
+          else if(m.status==='recognizing text'){statusEl.innerHTML='<span class="spin"></span>二级识别'+blk.name+'… '+Math.round(m.progress*100)+'%'}
+        }
       }).then(function(result){
         allText+='\n'+(result.data.text||'');
         doneCount++;
@@ -5990,7 +5997,9 @@ function maRunImgOCR(file, status){
         workerPath: './lib/worker.min.js',
         corePath: './lib',
         logger: function(m){
-          if(m.status === 'recognizing text') status.innerHTML = '<span class="spin"></span>正在识别... ' + Math.round(m.progress*100) + '%';
+          console.log('[OCR-ma]',m.status,Math.round((m.progress||0)*100)+'%');
+          if(m.status==='loading language traineddata') status.innerHTML='<span class="spin"></span>下载语言包('+Math.round(m.progress*100)+'%)…';
+          else if(m.status === 'recognizing text') status.innerHTML = '<span class="spin"></span>正在识别... ' + Math.round(m.progress*100) + '%';
         }
       });
     });
@@ -6783,10 +6792,10 @@ function lrApiTest(){
                     Tesseract.recognize(imgData,'chi_sim+eng',{
                       workerPath:'./lib/worker.min.js',
                       corePath:'./lib',
-                                    logger:function(m){
-                        if(m.status==='recognizing text'){
-                          status.innerHTML='<span class="spin"></span>第'+pageNum+'页OCR中… '+Math.round(m.progress*100)+'%'
-                        }
+                      logger:function(m){
+                        console.log('[OCR-pdf]',m.status,Math.round((m.progress||0)*100)+'%');
+                        if(m.status==='loading language traineddata'){status.innerHTML='<span class="spin"></span>第'+pageNum+'页：下载语言包('+Math.round(m.progress*100)+'%)…'}
+                        else if(m.status==='recognizing text'){status.innerHTML='<span class="spin"></span>第'+pageNum+'页OCR中… '+Math.round(m.progress*100)+'%'}
                       }
                     }).then(function(result){
                       allText.push(result.data.text||'');
@@ -6834,8 +6843,9 @@ function lrApiTest(){
         Tesseract.recognize(imgDataList[idx],'eng',{
           workerPath:'./lib/worker.min.js',
           corePath:'./lib',
-            tessedit_char_whitelist:'0123456789.,%: ',
+          tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
+            console.log('[OCR-verify]',m.status,Math.round((m.progress||0)*100)+'%');
             if(m.status==='recognizing text'){
               if(verifyBody)verifyBody.innerHTML='<span class="spin"></span>数字校验第'+(idx+1)+'/'+imgDataList.length+'张… '+Math.round(m.progress*100)+'%'
             }
@@ -6967,8 +6977,9 @@ function lrApiTest(){
         Tesseract.recognize(img.src,'eng',{
           workerPath:'./lib/worker.min.js',
           corePath:'./lib',
-            tessedit_char_whitelist:'0123456789.,%: ',
+          tessedit_char_whitelist:'0123456789.,%: ',
           logger:function(m){
+            console.log('[OCR-verify2]',m.status,Math.round((m.progress||0)*100)+'%');
             if(m.status==='recognizing text'){
               if(verifyBody)verifyBody.innerHTML='<span class="spin"></span>数字二次聚焦校验中… '+Math.round(m.progress*100)+'%'
             }
@@ -8724,6 +8735,7 @@ function v27NavToggle(e){
         var timeoutPromise = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('TIMEOUT')); }, 180000); });
         var recogPromise = window.Tesseract.recognize(ppData, 'chi_sim+eng', {
           logger: function(m){
+            console.log('[OCR-paddle]',m.status,Math.round((m.progress||0)*100)+'%');
             if(m.status === 'recognizing text'){
               statusEl.innerHTML = '<span class="spin"></span>🚀 PaddleOCR 识别中（PP-OCRv3 本地模型）… ' + Math.round((m.progress || 0) * 100) + '%';
             }
